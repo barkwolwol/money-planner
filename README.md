@@ -1,2 +1,0 @@
-# money-planner
-money-planner
