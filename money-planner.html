@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>월급 통장 플래너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF2EF; --surface:#FFFFFF; --ink:#16302A; --muted:#5D6E67; --line:#D5DDD8;
+  --pos:#1D7656; --neg:#B3342B; --accent:#B97B0C; --soft:#E3EAE5; --focus:#2F6FD0;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111714; --surface:#19211D; --ink:#E4ECE8; --muted:#93A49D; --line:#2B3732;
+    --pos:#4EC196; --neg:#F0796F; --accent:#E3AE48; --soft:#222C27; --focus:#7FB0FF;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111714; --surface:#19211D; --ink:#E4ECE8; --muted:#93A49D; --line:#2B3732;
+  --pos:#4EC196; --neg:#F0796F; --accent:#E3AE48; --soft:#222C27; --focus:#7FB0FF;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  font-size:15px;line-height:1.55;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* hero */
+.hero{padding:8px 0 22px}
+.hero h1{font-size:15px;font-weight:600;margin:0 0 6px;color:var(--muted)}
+.big{font-size:clamp(38px,7vw,64px);font-weight:700;letter-spacing:-.02em;line-height:1.05;margin:0}
+.big small{font-size:.42em;font-weight:500;margin-left:4px;color:var(--muted)}
+.sub{margin:10px 0 0;color:var(--muted);max-width:62ch}
+.sub b{color:var(--ink);font-weight:600}
+.stats{display:flex;flex-wrap:wrap;gap:10px 34px;margin-top:18px}
+.stat span{display:block;font-size:13px;color:var(--muted)}
+.stat strong{font-size:19px;font-weight:600}
+.chartbox{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 14px 6px;overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:560px;height:auto}
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--muted);padding:6px 4px 4px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* layout */
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:22px;margin-top:26px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel+.panel{margin-top:16px}
+.panel h2{font-size:17px;margin:0 0 4px;font-weight:700}
+.panel .hint{font-size:13px;color:var(--muted);margin:0 0 14px}
+.field{display:grid;grid-template-columns:1fr 150px;align-items:center;gap:10px;margin:8px 0}
+.field label{font-size:14px}
+.inp{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+.inp.num{text-align:right}
+.inp::placeholder{color:var(--muted);opacity:.7}
+input[type=month].inp{padding:6px 8px;font-size:13.5px}
+
+.fx{display:grid;grid-template-columns:22px 1fr 54px 112px 28px;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.fx:first-of-type{border-top:0}
+.fx .term{grid-column:2 / 6;display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.fx .term input{flex:1}
+.fx.off .inp:not([type=month]){opacity:.5;text-decoration:line-through}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;width:28px;height:28px;border-radius:6px;font-size:18px;line-height:1}
+.x:hover{background:var(--soft);color:var(--neg)}
+.add{margin-top:10px;border:1px dashed var(--line);background:none;border-radius:8px;padding:7px 12px;cursor:pointer;color:var(--muted);width:100%}
+.add:hover{color:var(--ink);border-color:var(--muted)}
+.total{display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:2px solid var(--ink);font-weight:600}
+.cards{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:2px;background:var(--soft);border-radius:20px;padding:2px 4px 2px 12px;font-size:14px}
+.chip .x{width:24px;height:24px;font-size:15px}
+.row-add{display:flex;gap:6px;margin-top:10px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ledger */
+.ledger-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ledger-head h2{margin:0;font-size:17px}
+.cols,.mh{display:grid;grid-template-columns:110px repeat(4,minmax(0,1fr)) 22px;gap:8px;align-items:center}
+.cols{font-size:12.5px;color:var(--muted);padding:0 14px 6px;text-align:right}
+.cols span:first-child{text-align:left}
+.month{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.month.neg{border-left:4px solid var(--neg)}
+.mh{width:100%;border:0;background:none;padding:12px 14px;cursor:pointer;text-align:right}
+.mh:hover{background:var(--soft)}
+.mh .ml{text-align:left;font-weight:600}
+.mh .ml em{display:block;font-style:normal;font-weight:400;font-size:12px;color:var(--muted)}
+.mh .v{font-size:14.5px}
+.mh .cum{font-weight:700}
+.pos{color:var(--pos)} .neg-t{color:var(--neg)}
+.chev{transition:transform .2s;color:var(--muted)}
+.month.open .chev{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+.mb{border-top:1px solid var(--line);padding:16px 14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:18px 22px}
+@media (max-width:640px){
+  .mb{grid-template-columns:1fr}
+  .cols{display:none}
+  .mh{grid-template-columns:1fr 1fr 22px;row-gap:2px}
+  .mh .ml{grid-column:1 / 3}
+  .mh .chev{grid-row:1;grid-column:3}
+  .mh .v{text-align:left;font-size:13.5px}
+  .mh .v::before{content:attr(data-l) " ";color:var(--muted);font-size:12px}
+}
+.mb h3{font-size:14px;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between}
+.mb h3 span{font-weight:500;color:var(--muted)}
+.li{display:grid;grid-template-columns:1fr 128px 28px;gap:6px;margin-bottom:6px;align-items:center}
+.li.card{grid-template-columns:1fr 128px}
+.li label{font-size:14px}
+.fxl{font-size:13.5px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+.fxl label{display:flex;gap:8px;align-items:center;padding:4px 0;cursor:pointer}
+.fxl label span:last-child{margin-left:auto;color:var(--muted)}
+.fxl label.skip span{text-decoration:line-through;opacity:.55}
+.full{grid-column:1 / -1}
+.foot{margin-top:28px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1 id="heroLabel">기간 말 예상 잔액</h1>
+    <p class="big" id="heroBig">0<small>원</small></p>
+    <p class="sub" id="heroSub"></p>
+    <div class="stats" id="stats"></div>
+    <div class="chartbox">
+      <div id="chart" role="img" aria-label="월별 남는 돈과 누적 잔액 그래프"></div>
+      <div class="legend">
+        <span><i style="background:var(--pos)"></i>그 달에 남는 돈</span>
+        <span><i style="background:var(--neg)"></i>그 달에 모자란 돈</span>
+        <span><i style="background:var(--ink);height:3px;vertical-align:3px"></i>누적 잔액</span>
+        <span id="goalLegend"><i style="background:var(--accent);height:2px;vertical-align:3px"></i>목표 금액</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <aside>
+      <section class="panel">
+        <h2>급여 정보</h2>
+        <p class="hint">달마다 다르면 오른쪽 월별 내역에서 그 달만 바꾸면 됩니다.</p>
+        <div class="field"><label for="baseSalary">기본 월급 (실수령)</label><input class="inp num" id="baseSalary" inputmode="numeric"></div>
+        <div class="field"><label for="startBal">시작 시점 잔액</label><input class="inp num" id="startBal" inputmode="numeric"></div>
+        <div class="field"><label for="goal">모으고 싶은 금액</label><input class="inp num" id="goal" inputmode="numeric" placeholder="선택"></div>
+        <div class="field"><label for="from">계산 시작 월</label><input class="inp" type="month" id="from"></div>
+        <div class="field"><label for="to">계산 종료 월</label><input class="inp" type="month" id="to"></div>
+      </section>
+
+      <section class="panel">
+        <h2>고정 지출</h2>
+        <p class="hint">매달 나가는 대출 상환 등. 기간을 비워두면 계산 기간 내내 적용됩니다.</p>
+        <div id="fixedList"></div>
+        <button class="add" id="addFixed" type="button">+ 고정 지출 추가</button>
+        <div class="total"><span>월 고정 지출 (이번 기준)</span><span id="fixedTotal">0원</span></div>
+      </section>
+
+      <section class="panel">
+        <h2>카드</h2>
+        <p class="hint">월별 내역에 카드 대금 입력칸으로 나타납니다.</p>
+        <div class="cards" id="cardList"></div>
+        <div class="row-add"><input class="inp" id="newCard" placeholder="카드 이름"><button class="btn" id="addCard" type="button">추가</button></div>
+      </section>
+
+      <section class="panel">
+        <h2>데이터</h2>
+        <p class="hint">입력한 내용은 이 브라우저에 자동 저장됩니다.</p>
+        <div class="tools">
+          <button class="btn" id="resetSample" type="button">엑셀 값으로 되돌리기</button>
+          <button class="btn" id="clearAll" type="button">전부 비우기</button>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <div class="ledger-head">
+        <h2>월별 내역</h2>
+        <div class="tools">
+          <button class="btn" id="openAll" type="button">모두 펼치기</button>
+          <button class="btn" id="closeAll" type="button">모두 접기</button>
+        </div>
+      </div>
+      <div class="cols" aria-hidden="true"><span>월</span><span>수입</span><span>지출</span><span>남는 돈</span><span>누적 잔액</span><span></span></div>
+      <div id="months"></div>
+      <p class="foot">수입 = 월급 + 추가 수입 · 지출 = 고정 지출 + 카드 대금 + 일회성 지출 · 누적 잔액 = 지난달 누적 잔액 + 이번 달 남는 돈</p>
+    </main>
+  </div>
+</div>
+
+<script>
+const KEY = 'salary-planner-v1';
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+const fx = (name, day, amount, from = '', to = '', on = true) => ({ id: uid(), name, day, amount, from, to, on });
+function sample() {
+  return {
+    from: '2026-09', to: '2027-12',
+    baseSalary: 3419930, startBal: 0, goal: 0,
+    cards: ['현대', '삼성', '신한'],
+    fixed: [
+      fx('국민', 23, 4229, '2026-10'), fx('SBI', 25, 189892, '2026-10'),
+      fx('서금', 27, 3916, '2026-10'), fx('서금', 27, 3916, '2026-10'),
+      fx('국민', 27, 119574, '2026-10'), fx('국민', 27, 92766, '2026-10'),
+      fx('국민', 27, 47122, '2026-10'), fx('전북', 28, 48702, '2026-10'),
+      fx('광주', 29, 20547, '2026-10'),
+      fx('전북', 7, 103026, '2026-09'), fx('기업', 10, 44000, '2026-09'),
+      fx('하나', 11, 35000, '2026-09'), fx('전북', 12, 22054, '2026-09'),
+      fx('국민', 12, 6964, '2026-09'), fx('국민', 18, 648, '2026-09'),
+      fx('국민', 18, 2196, '2026-09'), fx('기업', 14, 39000, '2026-09'),
+      fx('용민이형', '', 300000, '', '', false)
+    ],
+    months: {
+      '2026-09': { salary: 130000, cards: {}, incomes: [{ name: '추가 수입', amount: 86840 }, { name: 'K패스', amount: 60150 }, { name: '추가 수입', amount: 120750 }], expenses: [], skip: [] },
+      '2026-10': { salary: null, cards: { '현대': 671451, '삼성': 1000000, '신한': 1600000 }, incomes: [], expenses: [], skip: [] },
+      '2026-11': { salary: null, cards: { '신한': 800000 }, incomes: [], expenses: [], skip: [] },
+      '2026-12': { salary: null, cards: { '신한': 800000 }, incomes: [{ name: '상여금', amount: 3000000 }, { name: '입사소개', amount: 500000 }],
+        expenses: [{ name: '영익이', amount: 3300000 }, { name: '석원이', amount: 1500000 }, { name: '우용이형', amount: 1000000 }, { name: '우중이', amount: 1000000 }], skip: [] },
+      '2027-02': { salary: null, cards: {}, incomes: [{ name: '상여금', amount: 300000 }], expenses: [], skip: [] },
+      '2027-06': { salary: null, cards: {}, incomes: [{ name: '입사소개', amount: 500000 }], expenses: [], skip: [] },
+      '2027-12': { salary: null, cards: {}, incomes: [{ name: '상여금', amount: 3000000 }], expenses: [], skip: [] }
+    }
+  };
+}
+
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)) || sample(); } catch (e) { S = sample(); }
+const openSet = new Set();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+const fmt = n => (n < 0 ? '-' : '') + Math.abs(Math.round(n || 0)).toLocaleString('ko-KR');
+const won = n => fmt(n) + '원';
+const parse = s => { const neg = /^\s*-/.test(s); const d = String(s).replace(/[^\d]/g, ''); return d ? (neg ? -1 : 1) * parseInt(d, 10) : 0; };
+const label = ym => { const [y, m] = ym.split('-'); return `${y}년 ${+m}월`; };
+const sum = a => a.reduce((t, x) => t + (+x || 0), 0);
+function range(a, b) {
+  const out = []; if (!a || !b || a > b) return out;
+  let [y, m] = a.split('-').map(Number);
+  while (true) { const k = `${y}-${String(m).padStart(2, '0')}`; out.push(k); if (k >= b || out.length > 120) break; m++; if (m > 12) { m = 1; y++; } }
+  return out;
+}
+const md = ym => (S.months[ym] ||= { salary: null, cards: {}, incomes: [], expenses: [], skip: [] });
+const peek = ym => S.months[ym] || { salary: null, cards: {}, incomes: [], expenses: [], skip: [] };
+const fixedOn = (f, ym) => f.on && (!f.from || ym >= f.from) && (!f.to || ym <= f.to);
+
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'class') el.className = v;
+    else if (v !== false && v != null) el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null) el.append(c);
+  return el;
+}
+function amountInput(value, onChange, opts = {}) {
+  const el = h('input', { class: 'inp num', inputmode: 'numeric', placeholder: opts.placeholder || '0', 'aria-label': opts.label || '금액' });
+  el.value = value == null || value === '' ? '' : fmt(value);
+  el.addEventListener('input', () => onChange(el.value.trim() === '' ? null : parse(el.value)));
+  el.addEventListener('blur', () => { if (el.value.trim() !== '') el.value = fmt(parse(el.value)); });
+  return el;
+}
+
+function compute() {
+  let cum = +S.startBal || 0;
+  return range(S.from, S.to).map(ym => {
+    const m = peek(ym);
+    const salary = m.salary == null ? (+S.baseSalary || 0) : m.salary;
+    const extraIn = sum(m.incomes.map(x => x.amount));
+    const fixed = sum(S.fixed.filter(f => fixedOn(f, ym) && !m.skip.includes(f.id)).map(f => f.amount));
+    const cards = sum(S.cards.map(c => m.cards[c]));
+    const other = sum(m.expenses.map(x => x.amount));
+    const income = salary + extraIn, expense = fixed + cards + other, net = income - expense;
+    cum += net;
+    return { ym, salary, extraIn, income, fixed, cards, other, expense, net, cum };
+  });
+}
+
+/* ---------- settings ---------- */
+function bindSettings() {
+  const map = { baseSalary: 'baseSalary', startBal: 'startBal', goal: 'goal' };
+  for (const [id, key] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    el.value = S[key] ? fmt(S[key]) : '';
+    el.oninput = () => { S[key] = parse(el.value); recalc(); };
+    el.onblur = () => { if (el.value.trim() !== '') el.value = fmt(parse(el.value)); };
+  }
+  const f = document.getElementById('from'), t = document.getElementById('to');
+  f.value = S.from; t.value = S.to;
+  f.onchange = () => { S.from = f.value; renderMonths(); recalc(); };
+  t.onchange = () => { S.to = t.value; renderMonths(); recalc(); };
+}
+
+function renderFixed() {
+  const box = document.getElementById('fixedList'); box.replaceChildren();
+  S.fixed.forEach((f, i) => {
+    const row = h('div', { class: 'fx' + (f.on ? '' : ' off') },
+      h('input', { type: 'checkbox', checked: f.on, 'aria-label': '적용', title: '적용 여부', onchange: e => { f.on = e.target.checked; row.classList.toggle('off', !f.on); renderMonths(); recalc(); } }),
+      h('input', { class: 'inp', value: f.name, 'aria-label': '이름', placeholder: '이름', oninput: e => { f.name = e.target.value; refreshFixedNames(); save(); } }),
+      h('input', { class: 'inp num', value: f.day, 'aria-label': '출금일', placeholder: '일', inputmode: 'numeric', oninput: e => { f.day = e.target.value; save(); } }),
+      amountInput(f.amount, v => { f.amount = v || 0; recalc(); }, { label: '월 금액' }),
+      h('button', { class: 'x', type: 'button', 'aria-label': '삭제', onclick: () => { S.fixed.splice(i, 1); renderFixed(); renderMonths(); recalc(); } }, '×'),
+      h('div', { class: 'term' }, '기간',
+        h('input', { class: 'inp', type: 'month', value: f.from, 'aria-label': '시작 월', onchange: e => { f.from = e.target.value; renderMonths(); recalc(); } }), '~',
+        h('input', { class: 'inp', type: 'month', value: f.to, 'aria-label': '끝 월', onchange: e => { f.to = e.target.value; renderMonths(); recalc(); } }))
+    );
+    box.append(row);
+  });
+}
+function refreshFixedNames() { document.querySelectorAll('.fxl [data-fid]').forEach(el => { const f = S.fixed.find(x => x.id === el.dataset.fid); if (f) el.textContent = f.name + (f.day ? ` ${f.day}일` : ''); }); }
+
+function renderCards() {
+  const box = document.getElementById('cardList'); box.replaceChildren();
+  S.cards.forEach((c, i) => box.append(h('span', { class: 'chip' }, c,
+    h('button', { class: 'x', type: 'button', 'aria-label': `${c} 카드 삭제`, onclick: () => { S.cards.splice(i, 1); renderCards(); renderMonths(); recalc(); } }, '×'))));
+}
+
+/* ---------- months ---------- */
+function renderMonths() {
+  const box = document.getElementById('months'); box.replaceChildren();
+  for (const ym of range(S.from, S.to)) {
+    const open = openSet.has(ym);
+    const sec = h('section', { class: 'month' + (open ? ' open' : ''), id: 'm-' + ym });
+    const head = h('button', { class: 'mh', type: 'button', 'aria-expanded': open ? 'true' : 'false', onclick: () => { open ? openSet.delete(ym) : openSet.add(ym); renderMonths(); recalc(); document.querySelector(`#m-${ym} .mh`).focus(); } },
+      h('span', { class: 'ml' }, label(ym), h('em', { 'data-k': 'note' })),
+      h('span', { class: 'v', 'data-k': 'income', 'data-l': '수입' }),
+      h('span', { class: 'v', 'data-k': 'expense', 'data-l': '지출' }),
+      h('span', { class: 'v', 'data-k': 'net', 'data-l': '남는 돈' }),
+      h('span', { class: 'v cum', 'data-k': 'cum', 'data-l': '누적' }),
+      h('span', { class: 'chev', 'aria-hidden': 'true' }, '›'));
+    sec.append(head);
+    if (open) sec.append(monthBody(ym));
+    box.append(sec);
+  }
+}
+
+function listEditor(title, arr, ym, kind) {
+  const wrap = h('div');
+  const head = h('h3', {}, title, h('span', { 'data-k': kind + 'Sum' }));
+  wrap.append(head);
+  arr.forEach((it, i) => wrap.append(h('div', { class: 'li' },
+    h('input', { class: 'inp', value: it.name, placeholder: '항목', 'aria-label': '항목 이름', oninput: e => { it.name = e.target.value; save(); } }),
+    amountInput(it.amount, v => { it.amount = v || 0; recalc(); }),
+    h('button', { class: 'x', type: 'button', 'aria-label': '삭제', onclick: () => { arr.splice(i, 1); renderMonths(); recalc(); } }, '×'))));
+  wrap.append(h('button', { class: 'add', type: 'button', onclick: () => { arr.push({ name: '', amount: 0 }); renderMonths(); recalc(); } }, '+ 추가'));
+  wrap.setAttribute('data-list', kind);
+  return wrap;
+}
+
+function monthBody(ym) {
+  const m = md(ym);
+  const body = h('div', { class: 'mb' });
+
+  const sal = h('div', {}, h('h3', {}, '월급'),
+    h('div', { class: 'li card' }, h('label', {}, '이번 달 실수령'),
+      amountInput(m.salary, v => { m.salary = v; recalc(); }, { placeholder: fmt(S.baseSalary) + ' (기본)', label: '이번 달 월급' })));
+  body.append(sal);
+
+  const cards = h('div', {}, h('h3', {}, '카드 대금', h('span', { 'data-k': 'cardSum' })));
+  if (!S.cards.length) cards.append(h('p', { class: 'hint' }, '왼쪽에서 카드를 추가하세요.'));
+  S.cards.forEach(c => cards.append(h('div', { class: 'li card' }, h('label', {}, c),
+    amountInput(m.cards[c], v => { if (v) m.cards[c] = v; else delete m.cards[c]; recalc(); }, { label: c + ' 카드 대금' }))));
+  body.append(cards);
+
+  body.append(listEditor('추가 수입', m.incomes, ym, 'inc'));
+  body.append(listEditor('일회성 지출', m.expenses, ym, 'exp'));
+
+  const act = S.fixed.filter(f => fixedOn(f, ym));
+  const fxBox = h('div', { class: 'full' }, h('h3', {}, '이번 달 고정 지출', h('span', { 'data-k': 'fixedSum' })));
+  if (!act.length) fxBox.append(h('p', { class: 'hint' }, '이 달에 적용되는 고정 지출이 없습니다.'));
+  else {
+    const l = h('div', { class: 'fxl' });
+    act.forEach(f => {
+      const skip = m.skip.includes(f.id);
+      const lab = h('label', { class: skip ? 'skip' : '' },
+        h('input', { type: 'checkbox', checked: !skip, onchange: e => {
+          if (e.target.checked) m.skip = m.skip.filter(x => x !== f.id); else m.skip.push(f.id);
+          lab.classList.toggle('skip', !e.target.checked); recalc(); } }),
+        h('span', { 'data-fid': f.id }, f.name + (f.day ? ` ${f.day}일` : '')),
+        h('span', {}, won(f.amount)));
+      l.append(lab);
+    });
+    fxBox.append(l, h('p', { class: 'hint', style: 'margin:6px 0 0' }, '체크를 풀면 이 달만 빠집니다.'));
+  }
+  body.append(fxBox);
+  return body;
+}
+
+/* ---------- output ---------- */
+function setNum(el, n, signed) { el.textContent = (signed && n > 0 ? '+' : '') + fmt(n); el.classList.toggle('neg-t', n < 0); el.classList.toggle('pos', signed && n > 0); }
+
+function recalc() {
+  const rows = compute();
+  save();
+
+  // fixed total (based on first month in range or today)
+  const ref = rows.length ? rows[Math.min(1, rows.length - 1)].ym : '';
+  document.getElementById('fixedTotal').textContent = won(sum(S.fixed.filter(f => fixedOn(f, ref || f.from || '0000')).map(f => f.amount)));
+
+  for (const r of rows) {
+    const sec = document.getElementById('m-' + r.ym); if (!sec) continue;
+    const q = k => sec.querySelector(`[data-k="${k}"]`);
+    setNum(q('income'), r.income); setNum(q('expense'), r.expense); setNum(q('net'), r.net, true); setNum(q('cum'), r.cum);
+    sec.classList.toggle('neg', r.cum < 0);
+    const m = peek(r.ym), notes = [];
+    if (r.extraIn) notes.push('추가 수입 ' + fmt(r.extraIn));
+    if (r.other) notes.push('일회성 ' + fmt(r.other));
+    q('note').textContent = notes.join(' / ');
+    const s = (k, v) => { const el = q(k); if (el) el.textContent = won(v); };
+    s('cardSum', r.cards); s('fixedSum', r.fixed); s('incSum', r.extraIn); s('expSum', r.other);
+  }
+  hero(rows); chart(rows);
+}
+
+function hero(rows) {
+  const big = document.getElementById('heroBig'), sub = document.getElementById('heroSub'), st = document.getElementById('stats');
+  if (!rows.length) { big.innerHTML = '0<small>원</small>'; sub.textContent = '계산 기간을 확인하세요.'; st.replaceChildren(); return; }
+  const last = rows[rows.length - 1];
+  document.getElementById('heroLabel').textContent = `${label(last.ym)} 말 예상 잔액`;
+  big.replaceChildren(fmt(last.cum), h('small', {}, '원'));
+  big.style.color = last.cum < 0 ? 'var(--neg)' : '';
+
+  const goal = +S.goal || 0, parts = [];
+  parts.push(`${label(rows[0].ym)}부터 ${rows.length}개월 동안 남는 돈을 모두 모으면 이만큼 됩니다.`);
+  if (goal > 0) {
+    const hit = rows.find(r => r.cum >= goal);
+    parts.push(hit ? `목표 <b>${won(goal)}</b>은 <b>${label(hit.ym)}</b>에 넘어섭니다.`
+                   : `목표 <b>${won(goal)}</b>까지 기간 안에 <b>${won(goal - last.cum)}</b>이 모자랍니다.`);
+  }
+  const negs = rows.filter(r => r.cum < 0);
+  if (negs.length) parts.push(`누적 잔액이 마이너스인 달: <b>${negs.map(r => label(r.ym)).join(', ')}</b>. 그 달 지출 일정을 조정해야 합니다.`);
+  sub.innerHTML = parts.join(' ');
+
+  const steady = rows.filter(r => !r.extraIn && !r.other && !r.cards);
+  const avgSteady = steady.length ? sum(steady.map(r => r.net)) / steady.length : null;
+  const minR = rows.reduce((a, b) => (b.cum < a.cum ? b : a));
+  const stat = (t, v, cls) => h('div', { class: 'stat' }, h('span', {}, t), h('strong', { class: cls || '' }, v));
+  st.replaceChildren(
+    stat('월평균 남는 돈', won(sum(rows.map(r => r.net)) / rows.length)),
+    avgSteady != null ? stat('평소 달 (카드·특별 항목 없을 때)', won(avgSteady)) : null,
+    stat('잔액이 가장 낮은 달', `${label(minR.ym)} · ${won(minR.cum)}`, minR.cum < 0 ? 'neg-t' : ''),
+    stat('기간 총 지출', won(sum(rows.map(r => r.expense))))
+  );
+  document.getElementById('goalLegend').style.display = goal > 0 ? '' : 'none';
+}
+
+function chart(rows) {
+  const box = document.getElementById('chart');
+  if (!rows.length) { box.innerHTML = ''; return; }
+  const W = 760, H = 250, L = 64, R = 12, T = 14, B = 30;
+  const goal = +S.goal || 0;
+  const vals = rows.flatMap(r => [r.net, r.cum]).concat([0]); if (goal) vals.push(goal);
+  let mx = Math.max(...vals), mn = Math.min(...vals);
+  if (mx === mn) mx = mn + 1;
+  const pad = (mx - mn) * 0.06; mx += pad; mn -= mn < 0 ? pad : 0;
+  const y = v => T + (mx - v) / (mx - mn) * (H - T - B);
+  const step = (W - L - R) / rows.length, bw = Math.max(4, step * 0.5);
+  const x = i => L + step * i + step / 2;
+  const tick = (() => { const raw = (mx - mn) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))); const n = raw / p; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * p; })();
+  const man = v => { const a = Math.abs(v); const s = a >= 1e8 ? (v / 1e8).toFixed(1).replace(/\.0$/, '') + '억' : Math.round(v / 1e4).toLocaleString('ko-KR') + '만'; return v === 0 ? '0' : s; };
+  let g = '';
+  for (let v = Math.ceil(mn / tick) * tick; v <= mx; v += tick) {
+    g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" ${v === 0 ? 'stroke-width="1.5" stroke="var(--muted)"' : ''}/>`;
+    g += `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${man(v)}</text>`;
+  }
+  rows.forEach((r, i) => {
+    const y0 = y(0), y1 = y(r.net);
+    g += `<rect x="${x(i) - bw / 2}" y="${Math.min(y0, y1)}" width="${bw}" height="${Math.max(1, Math.abs(y1 - y0))}" rx="2" fill="${r.net < 0 ? 'var(--neg)' : 'var(--pos)'}" opacity=".85"><title>${label(r.ym)} 남는 돈 ${won(r.net)}</title></rect>`;
+    const mm = +r.ym.slice(5);
+    g += `<text x="${x(i)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">${mm === 1 || i === 0 ? r.ym.slice(2, 4) + '.' : ''}${mm}월</text>`;
+  });
+  if (goal) g += `<line x1="${L}" x2="${W - R}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  const pts = rows.map((r, i) => `${x(i)},${y(r.cum)}`).join(' ');
+  g += `<polyline points="${pts}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  rows.forEach((r, i) => g += `<circle cx="${x(i)}" cy="${y(r.cum)}" r="3.5" fill="var(--surface)" stroke="${r.cum < 0 ? 'var(--neg)' : 'var(--ink)'}" stroke-width="2"><title>${label(r.ym)} 누적 ${won(r.cum)}</title></circle>`);
+  const lastR = rows[rows.length - 1];
+  g += `<text x="${x(rows.length - 1)}" y="${y(lastR.cum) - 10}" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink)">${man(lastR.cum)}</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+/* ---------- actions ---------- */
+document.getElementById('addFixed').onclick = () => { S.fixed.push(fx('', '', 0)); renderFixed(); renderMonths(); recalc(); const ins = document.querySelectorAll('#fixedList .fx'); ins[ins.length - 1]?.querySelector('input.inp')?.focus(); };
+const addCard = () => { const el = document.getElementById('newCard'); const v = el.value.trim(); if (!v || S.cards.includes(v)) return; S.cards.push(v); el.value = ''; renderCards(); renderMonths(); recalc(); };
+document.getElementById('addCard').onclick = addCard;
+document.getElementById('newCard').onkeydown = e => { if (e.key === 'Enter') addCard(); };
+document.getElementById('openAll').onclick = () => { range(S.from, S.to).forEach(m => openSet.add(m)); renderMonths(); recalc(); };
+document.getElementById('closeAll').onclick = () => { openSet.clear(); renderMonths(); recalc(); };
+document.getElementById('resetSample').onclick = () => { if (confirm('지금 입력한 내용을 지우고 엑셀 값으로 되돌릴까요?')) { S = sample(); init(); } };
+document.getElementById('clearAll').onclick = () => {
+  if (!confirm('모든 입력을 비울까요? 기간과 카드 목록만 남습니다.')) return;
+  S = { from: S.from, to: S.to, baseSalary: 0, startBal: 0, goal: 0, cards: S.cards, fixed: [], months: {} }; init();
+};
+
+function init() { bindSettings(); renderFixed(); renderCards(); renderMonths(); recalc(); }
+init();
+</script>
+</body>
+</html>
